@@ -2,6 +2,8 @@
 
 A convention-based state machine that complements your models without stealing the show.
 
+Multiple state machines are supported.
+
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -16,10 +18,12 @@ And then execute:
 
 ## Usage
 
+### Single state machine in model
+
 ```ruby
 class Event
 
-  # Requires including class to define the following constants BEFORE including this module:
+  # By default, Transitionable assumes including class defines the following constants BEFORE including this module:
   #
   #  * STATES
   #  * TRANSITIONS
@@ -60,6 +64,63 @@ event.validate_transition(target_state: 'new_state')
 event.validate_transition!(target_state: 'new_state')
 # => returns true or raises Transitionable::InvalidStateTransition exception
 ```
+
+### Multiple state machines in model
+
+```ruby
+class Event
+
+  DELIVERY_STATES = {
+    STAGED:    'staged',
+    STARTED:   'started',
+    COMPLETED: 'completed'
+  }.freeze
+
+  PREP_STATES = {
+    COOKING: 'cooking',
+    COOKED:  'cooked'
+  }.freeze
+
+  DELIVERY_TRANSITIONS = [
+    { from: DELIVERY_STATES[:STAGED], to: DELIVERY_STATES[:STARTED] },
+    { from: DELIVERY_STATES[:STARTED], to: DELIVERY_STATES[:COMPLETED] }
+  ].freeze
+
+  PREP_TRANSITIONS = [
+    { from: PREP_STATES[:COOKING], to: PREP_STATES[:COOKED] }
+  ]
+
+  include Transitionable
+
+  transition :delivery_state, DELIVERY_STATES, DELIVERY_TRANSITIONS
+  transition :prep_state, PREP_STATES, PREP_TRANSITIONS
+
+end
+```
+
+Provides the following helpers
+
+```ruby
+event.staged?
+event.started?
+event.completed?
+event.cooking?
+event.cooked?
+```
+
+Provides 2 validation methods
+
+```ruby
+event.validate_transition(target_state: 'new_state')
+# => returns true or false
+
+event.validate_transition!(target_state: 'new_state')
+# => returns true or raises Transitionable::InvalidStateTransition exception
+```
+
+#### Important assumptions with multiple state machines:
+* Each state must be unique across all state machines in the model. Otherwise, `InvalidStateTransition` exception will thrown as Transitionable attempts to define the same helper method multiple times.
+* For the same reason, `"#{state}?"` must not be defined in your model for each of your state.
 
 ## Development
 

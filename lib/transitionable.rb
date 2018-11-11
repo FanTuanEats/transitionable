@@ -8,39 +8,56 @@ module Transitionable
 
   class InvalidStateTransition < StandardError
     def initialize(from_state, to_state)
-      msg = "Can't transition from #{from_state} to #{to_state}."
+      msg = from_state ?
+        "Can't transition from #{from_state} to #{to_state}." :
+        "Can't transition to #{to_state}."
       super(msg)
     end
   end
 
   module ClassMethods
-    attr_accessor :trans_column
+    attr_accessor :state_machines
 
-    def transition(column)
-      self.trans_column = column
-      self::STATES.values.each do |this_state|
+    # This assumes states is a hash
+    def transition(name, states = self::STATES, transitions = self::TRANSITIONS)
+      self.state_machines ||= {}
+      self.state_machines[name] = { states: states.values, transitions: transitions }
+      self.state_machines[name][:states].each do |this_state|
+        raise 'Method already defined' if self.new.respond_to? this_state
         define_method "#{this_state}?" do
-          transitionable_state == this_state
+          current_state_based_on(this_state) == this_state
         end
       end
     end
   end
 
-  def transitionable_state
-    self.send(self.class.trans_column)
-  end
-
   def validate_transition!(target_state:)
+    current_state = current_state_based_on(target_state)
     unless validate_transition(target_state: target_state)
-      raise InvalidStateTransition.new(transitionable_state, target_state)
+      raise InvalidStateTransition.new(current_state, target_state)
     end
     true
   end
 
   def validate_transition(target_state:)
-    self.class::TRANSITIONS.detect do |transition|
-      transition[:from] == transitionable_state && transition[:to] == target_state
-    end.present? ? true : false
+    self.class.state_machines.each do |machine_name, machine|
+      next unless machine[:states].include?(target_state)
+      current_state = send(machine_name)
+      matched_transition = machine[:transitions].detect do |transition|
+        transition[:from] == current_state && transition[:to] == target_state
+      end
+      return matched_transition.present?
+    end
+    raise InvalidStateTransition.new(nil, target_state)
+  end
+
+  private
+
+  def current_state_based_on(target_state)
+    self.class.state_machines.each do |machine_name, machine|
+      return send(machine_name) if machine[:states].include?(target_state)
+    end
+    raise InvalidStateTransition.new(nil, target_state)
   end
 
 end

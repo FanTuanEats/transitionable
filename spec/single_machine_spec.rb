@@ -76,14 +76,17 @@ RSpec.describe Transitionable do
     let(:event) { Event.new(Event::STATES[:STAGED]) }
 
     it 'returns true when transition is valid,' do
-      allow(event).to receive(:validate_transition).with(target_state: 'foo').and_return(true)
-      expect(event.validate_transition!(target_state: 'foo')).to be true
+      expect(event.validate_transition!(target_state: 'started')).to be true
     end
 
-    it 'raises exception when transition is invalid,' do
-      allow(event).to receive(:validate_transition).with(target_state: 'foo').and_return(false)
+    it 'raises exception when transition is invalid' do
+      expect{ event.validate_transition!(target_state: 'completed') }
+        .to raise_exception(Transitionable::InvalidStateTransition, 'Can\'t transition from staged to completed.')
+    end
+
+    it 'raises exception when target state is invalid,' do
       expect{ event.validate_transition!(target_state: 'foo') }
-        .to raise_exception(Transitionable::InvalidStateTransition, 'Can\'t transition from staged to foo.')
+        .to raise_exception(Transitionable::InvalidStateTransition, 'Can\'t transition to foo.')
     end
   end
 

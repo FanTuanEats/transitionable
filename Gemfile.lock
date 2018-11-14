@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    transitionable (0.2.0)
+    transitionable (0.3.0)
       activesupport (~> 5.2)
 
 GEM

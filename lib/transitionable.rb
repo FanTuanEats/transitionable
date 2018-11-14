@@ -46,8 +46,11 @@ module Transitionable
       matched_transition = machine[:transitions].detect do |transition|
         transition[:from] == current_state && transition[:to] == target_state
       end
-      return matched_transition.present?
+      return true if matched_transition.present?
+      yield(InvalidStateTransition.new(current_state, target_state)) if block_given?
+      return false
     end
+    # raise error if can't find the provided target state
     raise InvalidStateTransition.new(nil, target_state)
   end
 

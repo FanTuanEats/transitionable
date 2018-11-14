@@ -114,6 +114,12 @@ Provides 2 validation methods
 event.validate_transition(target_state: 'new_state')
 # => returns true or false
 
+# optionally, validate_transition also yield an error object when transition is invalid.
+event.validate_transition(target_state: 'new_state') do |error|
+  # You can do things like:
+  Airbrake.notify(error, attributes) # sends the error along with including model's attributes
+end
+
 event.validate_transition!(target_state: 'new_state')
 # => returns true or raises Transitionable::InvalidStateTransition exception
 ```

@@ -46,6 +46,23 @@ RSpec.describe Transitionable do
       expect(event).not_to be_started
       expect(event).to be_completed
     end
+
+    it 'does not allow duplicate state' do
+      class DuplicateStateEvent
+        STATES_1 = {STAGED: 'staged'}
+        STATES_2 = {STAGED: 'staged'}
+        TRANSITIONS_1 = []
+        TRANSITIONS_2 = []
+        include Transitionable
+        attr_accessor :state_1, :state_2
+        transition :state_1, STATES_1, TRANSITIONS_1
+      end
+
+      expect{
+        DuplicateStateEvent.transition(:state_2, DuplicateStateEvent::STATES_2, DuplicateStateEvent::TRANSITIONS_2)
+      }.to raise_error(RuntimeError, 'Method already defined')
+      Object.send(:remove_const, :DuplicateStateEvent)
+    end
   end
 
   describe '#validate_transition' do

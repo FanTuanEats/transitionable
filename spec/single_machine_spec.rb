@@ -49,18 +49,31 @@ RSpec.describe Transitionable do
   end
 
   describe '#validate_transition' do
-    it 'returns false for invalid transitions' do
-      event = Event.new(Event::STATES[:STAGED])
-      expect(event.validate_transition(target_state: Event::STATES[:STAGED])).to be false
-      expect(event.validate_transition(target_state: Event::STATES[:COMPLETED])).to be false
+    context 'when transaction is invalid,' do
+      it 'returns false' do
+        event = Event.new(Event::STATES[:STAGED])
+        expect(event.validate_transition(target_state: Event::STATES[:STAGED])).to be false
+        expect(event.validate_transition(target_state: Event::STATES[:COMPLETED])).to be false
 
-      event.some_state = Event::STATES[:STARTED]
-      expect(event.validate_transition(target_state: Event::STATES[:STAGED])).to be false
-      expect(event.validate_transition(target_state: Event::STATES[:STARTED])).to be false
+        event.some_state = Event::STATES[:STARTED]
+        expect(event.validate_transition(target_state: Event::STATES[:STAGED])).to be false
+        expect(event.validate_transition(target_state: Event::STATES[:STARTED])).to be false
 
-      event.some_state = Event::STATES[:COMPLETED]
-      expect(event.validate_transition(target_state: Event::STATES[:STAGED])).to be false
-      expect(event.validate_transition(target_state: Event::STATES[:STARTED])).to be false
+        event.some_state = Event::STATES[:COMPLETED]
+        expect(event.validate_transition(target_state: Event::STATES[:STAGED])).to be false
+        expect(event.validate_transition(target_state: Event::STATES[:STARTED])).to be false
+      end
+
+      it 'yields error if block is given' do
+        event = Event.new(Event::STATES[:STAGED])
+        error = nil
+        expect(
+          event.validate_transition(target_state: Event::STATES[:STAGED]) do |err|
+            error = err
+          end
+        ).to be false
+        expect(error.message).to eq 'Can\'t transition from staged to staged.'
+      end
     end
 
     it 'returns true for valid transitions' do

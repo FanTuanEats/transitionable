@@ -23,7 +23,6 @@ module Transitionable
       self.state_machines ||= {}
       self.state_machines[name] = { states: states.values, transitions: transitions }
       self.state_machines[name][:states].each do |this_state|
-        raise 'Method already defined' if self.new.respond_to? this_state
         define_method "#{this_state}?" do
           current_state_based_on(this_state) == this_state
         end

@@ -28,7 +28,7 @@ RSpec.describe Transitionable do
     Object.send(:remove_const, Event) if Object.constants.include?(Event)
   end
 
-  describe 'helpers' do
+  describe '#transition' do
     let(:event) { Event.new }
     it 'defines helpers for all states' do
       event.some_state = Event::STATES[:STAGED]
